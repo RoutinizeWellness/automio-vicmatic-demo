@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Demo · Panel de pedidos a proveedores · Vicmatic</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: Arial, Helvetica, sans-serif; background:#f4f5f3; color:#242424; }
+  header { background:#111; padding:14px 28px; display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
+  header .logo { height:34px; display:flex; align-items:center; }
+  header .logo svg { height:34px; width:auto; }
+  header .t { color:#fff; font-size:16px; font-weight:600; }
+  header .tag { margin-left:auto; background:#ffd500; color:#111; font-size:12px; font-weight:700; padding:4px 10px; border-radius:3px; }
+  section { padding:16px 28px 0; }
+  h2.sec { font-size:13px; text-transform:uppercase; letter-spacing:.05em; color:#6b6b6b; margin-bottom:10px; }
+  .portals { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  .portal { background:#fff; border:1px solid #e2e2de; border-radius:8px; padding:12px 14px; }
+  .portal .pn { font-size:13px; font-weight:700; }
+  .portal .pv { font-size:12px; color:#6b6b6b; margin:1px 0 8px; }
+  .st { font-size:12px; display:flex; align-items:center; gap:6px; }
+  .dot { width:9px; height:9px; border-radius:50%; display:inline-block; }
+  .d-ok { background:#1e7e46; } .d-off { background:#b3372f; } .d-wait { background:#c47f17; }
+  .portal .meta { font-size:11px; color:#8a8a8a; margin-top:6px; line-height:1.5; }
+  .mini { margin-top:8px; background:#111; color:#fff; border:none; padding:6px 12px; border-radius:5px; font-size:12px; cursor:pointer; }
+  .mini.ghost { background:#fff; color:#111; border:1px solid #111; }
+  .kpis { display:flex; gap:12px; flex-wrap:wrap; }
+  .kpi { background:#fff; border:1px solid #e2e2de; border-radius:8px; padding:10px 16px; min-width:150px; flex:1; }
+  .kpi .n { font-size:22px; font-weight:700; }
+  .kpi .l { font-size:11px; color:#6b6b6b; margin-top:2px; }
+  .kpi.warn .n { color:#c47f17; } .kpi.bad .n { color:#b3372f; } .kpi.ok .n { color:#1e7e46; }
+  .toolbar { padding:14px 28px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+  .btn { background:#111; color:#fff; border:none; padding:9px 16px; border-radius:6px; font-size:13px; cursor:pointer; }
+  .btn.ghost { background:#fff; color:#111; border:1px solid #111; }
+  .sync-note { font-size:12px; color:#6b6b6b; }
+  .log { padding:0 28px; font-size:12px; color:#444; display:none; }
+  .log div { padding:3px 0; }
+  .log .ok { color:#1e7e46; } .log .warn { color:#b3372f; }
+  main { padding:4px 28px 24px; }
+  table { width:100%; border-collapse:collapse; background:#fff; border-radius:8px; overflow:hidden; border:1px solid #e2e2de; }
+  th { background:#f0f0ec; text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:#6b6b6b; padding:9px 12px; }
+  td { padding:10px 12px; font-size:13px; border-top:1px solid #eeece8; }
+  tr.row { cursor:pointer; } tr.row:hover { background:#fafaf7; }
+  .badge { font-size:11px; font-weight:700; padding:3px 9px; border-radius:11px; white-space:nowrap; }
+  .b-ok { background:#e2f3e8; color:#1e7e46; }
+  .b-risk { background:#fdf1d7; color:#c47f17; }
+  .b-late { background:#fbe3e1; color:#b3372f; }
+  .b-sent { background:#dbe7fb; color:#1d4fa0; }
+  .b-prog { background:#f0f0ec; color:#555; }
+  .b-resp { background:#e2f3e8; color:#1e7e46; }
+  .b-esc { background:#fbe3e1; color:#b3372f; }
+  .plat { font-size:11px; color:#6b6b6b; }
+  .upd { font-size:11px; color:#8a8a8a; }
+  .rules { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:14px; }
+  .rule { background:#fff; border:1px solid #e2e2de; border-radius:8px; padding:12px 14px; font-size:12px; line-height:1.5; }
+  .rule .rn { font-weight:700; font-size:12px; margin-bottom:4px; }
+  .hist { margin-top:12px; font-size:12px; color:#444; background:#fff; border:1px solid #e2e2de; border-radius:8px; padding:10px 14px; }
+  .hist .hh { font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:#6b6b6b; font-weight:700; margin-bottom:4px; }
+  .hist div { padding:2px 0; }
+  .hist .ok { color:#1e7e46; } .hist .warn { color:#b3372f; }
+  .drawer { position:fixed; top:0; right:-480px; width:460px; max-width:95vw; height:100vh; background:#fff; box-shadow:-4px 0 18px rgba(0,0,0,.18); transition:right .25s ease; padding:24px; overflow-y:auto; z-index:10; }
+  .drawer.open { right:0; }
+  .drawer h2 { font-size:16px; margin-bottom:4px; }
+  .drawer .sub { font-size:12px; color:#6b6b6b; margin-bottom:16px; }
+  .mail { border:1px solid #e2e2de; border-radius:8px; padding:14px; font-size:13px; line-height:1.55; background:#fbfcfd; white-space:pre-line; }
+  .mail .mh { font-weight:700; margin-bottom:6px; }
+  .approve { margin-top:14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .status-line { font-size:12px; color:#6b6b6b; margin-top:10px; }
+  .close { float:right; background:none; border:none; font-size:18px; cursor:pointer; color:#6b6b6b; }
+  .modal-bg { position:fixed; inset:0; background:rgba(0,0,0,.35); display:none; z-index:20; }
+  .modal-bg.open { display:block; }
+  .modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:380px; max-width:92vw; background:#fff; border-radius:10px; padding:22px; display:none; z-index:21; }
+  .modal.open { display:block; }
+  .modal h3 { font-size:15px; margin-bottom:4px; }
+  .modal .sub { font-size:12px; color:#6b6b6b; margin-bottom:14px; }
+  .modal label { font-size:12px; color:#444; display:block; margin:10px 0 4px; }
+  .modal input { width:100%; padding:8px 10px; border:1px solid #d5d5d0; border-radius:6px; font-size:13px; background:#f7f7f5; }
+  .modal .actions { margin-top:16px; display:flex; gap:10px; }
+  footer { padding:14px 28px 24px; font-size:12px; color:#7c7c7c; line-height:1.6; }
+  .spin { display:inline-block; width:12px; height:12px; border:2px solid #fff; border-top-color:transparent; border-radius:50%; animation:s .7s linear infinite; vertical-align:-2px; margin-right:6px; }
+  @keyframes s { to { transform:rotate(360deg); } }
+  @media (max-width:1100px){ .portals{grid-template-columns:repeat(2,1fr);} .rules{grid-template-columns:1fr;} }
+  @page { size: A4 landscape; margin: 8mm; }
+  @media print {
+    body { background:#fff; zoom:0.62; }
+    .drawer, .modal, .modal-bg, .log { display:none !important; }
+    section, main { padding:8px 14px 0; }
+    .toolbar { padding:8px 14px; }
+    footer { padding:8px 14px 12px; font-size:9px; }
+    header { padding:8px 14px; }
+    header .logo, header .logo svg { height:22px; }
+    .portals { gap:8px; }
+    .portal { padding:8px 10px; }
+    .portal .meta { font-size:9px; }
+    .kpis { gap:8px; }
+    .kpi { padding:6px 10px; min-width:110px; }
+    .kpi .n { font-size:16px; }
+    .kpi .l { font-size:9px; }
+    th, td { padding:4px 7px; font-size:9.5px; }
+    th { font-size:8.5px; }
+    .rules { gap:8px; margin-bottom:8px; }
+    .rule { padding:8px 10px; font-size:9.5px; }
+    .rule .rn { font-size:9.5px; }
+    .hist { font-size:9px; padding:6px 10px; margin-top:8px; }
+    h2.sec { font-size:10px; margin-bottom:6px; }
+    .badge { font-size:8.5px; padding:2px 7px; }
+    .mini, .btn { padding:4px 8px; font-size:9px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <span class="logo"><svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 1000 288.5" style="enable-background:new 0 0 1000 288.5;" xml:space="preserve">
+            <style type="text/css">
+                .main-logo-2-style-01{fill:#FFDD00;}
+                .main-logo-2-style-02{fill:#000000;}
+            </style>
+            <g>
+                <polygon class="main-logo-2-style-01" points="597.3,157.5 612.3,157.5 604.8,117.4 	"/>
+                <path class="main-logo-2-style-01" d="M139.9,0l76.8,288.5H1000V0H139.9z M262.3,201.4h-33.2L198.7,87.1h31.4l15.9,79.7l16.1-79.7h31.3L262.3,201.4z
+                     M329.3,201.4H300V87.1h29.3V201.4z M385.4,175.7c6.3,0,12-2.3,12.9-22.7h29.3c0,29.3-11.4,50.2-42.2,50.2c-37.3,0-42.9-32-42.9-59
+                    c0-27,5.7-59,42.9-59c30.6,0,42.2,21.4,42.2,49.8h-29.3c-0.9-18.6-7-22.2-12.9-22.2c-12,0-13.2,17.5-13.2,31.3
+                    C372.2,161.2,374,175.7,385.4,175.7z M550.9,201.4H521v-58.2l-11.8,58.2h-27.2l-12.1-58.8v58.8h-29.3V87.1h41.5l13.6,75.2
+                    l13.8-75.2h41.5V201.4z M621.5,201.4l-4.3-18.8h-24.5l-4.8,18.8h-30.6l31.3-114.3h33.6L652,201.4H621.5z M713.5,114.8h-20.7v86.7
+                    h-29.1v-86.7h-20.7V87.1h70.6V114.8z M753.3,201.4H724V87.1h29.3V201.4z M809.4,175.7c6.3,0,12-2.3,12.9-22.7h29.3
+                    c0,29.3-11.4,50.2-42.2,50.2c-37.3,0-42.9-32-42.9-59c0-27,5.7-59,42.9-59c30.6,0,42.2,21.4,42.2,49.8h-29.3
+                    c-0.9-18.6-7-22.2-12.9-22.2c-12,0-13.2,17.5-13.2,31.3C796.2,161.2,798,175.7,809.4,175.7z"/>
+                <polygon points="0,0 0,288.5 216.6,288.5 139.9,0 	"/>
+                <polygon points="246.1,166.7 230.2,87.1 198.7,87.1 229.1,201.4 262.3,201.4 293.4,87.1 262.2,87.1 	"/>
+                <rect x="300" y="87.1" width="29.3" height="114.3"/>
+                <path d="M385.4,113c5.9,0,12,3.6,12.9,22.2h29.3c0-28.4-11.6-49.8-42.2-49.8c-37.2,0-42.9,32-42.9,59c0,27,5.5,59,42.9,59
+                    c30.7,0,42.2-20.9,42.2-50.2h-29.3c-0.9,20.4-6.6,22.7-12.9,22.7c-11.4,0-13.2-14.5-13.2-31.4C372.2,130.5,373.5,113,385.4,113z"/>
+                <polygon points="495.7,162.3 482.1,87.1 440.6,87.1 440.6,201.4 469.9,201.4 469.9,142.6 482.1,201.4 509.3,201.4 521,143.2 
+                    521,201.4 550.9,201.4 550.9,87.1 509.4,87.1 	"/>
+                <path d="M588.6,87.1l-31.3,114.3h30.6l4.8-18.8h24.5l4.3,18.8H652L622.2,87.1H588.6z M597.3,157.5l7.5-40l7.5,40H597.3z"/>
+                <polygon points="642.9,114.8 663.6,114.8 663.6,201.4 692.7,201.4 692.7,114.8 713.5,114.8 713.5,87.1 642.9,87.1 	"/>
+                <rect x="724" y="87.1" width="29.3" height="114.3"/>
+                <path d="M809.4,113c5.9,0,12,3.6,12.9,22.2h29.3c0-28.4-11.6-49.8-42.2-49.8c-37.2,0-42.9,32-42.9,59c0,27,5.5,59,42.9,59
+                    c30.7,0,42.2-20.9,42.2-50.2h-29.3c-0.9,20.4-6.6,22.7-12.9,22.7c-11.4,0-13.2-14.5-13.2-31.4C796.2,130.5,797.4,113,809.4,113z"/>
+            </g>
+            <g>
+                <path class="main-logo-2-style-02" d="M978,22v244.5H22V22H978 M1000,0H0v288.5h1000V0L1000,0z"/>
+            </g>
+            </svg></span>
+  <span class="t">Panel de pedidos a proveedores</span>
+  <span class="tag">DEMO · datos ficticios</span>
+</header>
+
+<section>
+  <h2 class="sec">Conexiones con los portales de los proveedores</h2>
+  <div class="portals">
+    <div class="portal" id="p1">
+      <div class="pn">Portal Neumática Levante</div>
+      <div class="pv">Neumática Levante S.A.</div>
+      <div class="st"><span class="dot d-ok"></span> Sesión activa</div>
+      <div class="meta">Usuario: compras@vicmatic.com<br>Última lectura: hoy 07:40 · 4 pedidos</div>
+    </div>
+    <div class="portal" id="p2">
+      <div class="pn">Extranet Hidráulica Segre</div>
+      <div class="pv">Hidráulica Segre S.L.</div>
+      <div class="st"><span class="dot d-ok"></span> Sesión activa</div>
+      <div class="meta">Usuario: pedidos.vicmatic<br>Última lectura: hoy 07:38 · 2 pedidos</div>
+    </div>
+    <div class="portal" id="p3">
+      <div class="pn">Web Componentes Ebro</div>
+      <div class="pv">Componentes Ebro</div>
+      <div class="st" id="p3st"><span class="dot d-off"></span> Sesión caducada</div>
+      <div class="meta">Última lectura correcta: ayer 18:12<br>2 pedidos sin actualizar</div>
+      <button class="mini" id="reconnectBtn">Reconectar</button>
+    </div>
+    <div class="portal" id="p4">
+      <div class="pn">EDI Válvulas Monegrillo</div>
+      <div class="pv">Válvulas Monegrillo</div>
+      <div class="st"><span class="dot d-ok"></span> Conexión EDI activa</div>
+      <div class="meta">Último mensaje ORDCHG: hoy 07:35<br>2 pedidos</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2 class="sec" style="margin-top:16px;">Resumen de hoy</h2>
+  <div class="kpis">
+    <div class="kpi"><div class="n">14</div><div class="l">Pedidos activos</div></div>
+    <div class="kpi ok"><div class="n">9</div><div class="l">En plazo</div></div>
+    <div class="kpi warn"><div class="n">3</div><div class="l">Con riesgo de retraso</div></div>
+    <div class="kpi bad"><div class="n">2</div><div class="l">Retrasados</div></div>
+    <div class="kpi"><div class="n">4</div><div class="l">Correos de seguimiento listos para revisar</div></div>
+    <div class="kpi bad"><div class="n">3</div><div class="l">Reclamaciones automáticas en curso</div></div>
+  </div>
+</section>
+
+<div class="toolbar">
+  <button class="btn" id="syncBtn">Actualizar estados desde los portales</button>
+  <span class="sync-note" id="syncNote">Última lectura completa: hoy 07:40 (simulada)</span>
+</div>
+<div class="log" id="log"></div>
+
+<main>
+<table>
+  <thead><tr>
+    <th>Pedido</th><th>Proveedor</th><th>Portal de origen</th><th>Material</th><th>Entrega prevista</th><th>Estado</th><th>Estado leído</th>
+  </tr></thead>
+  <tbody id="rows"></tbody>
+</table>
+</main>
+
+<section style="padding-bottom:20px;">
+  <h2 class="sec" style="margin-top:6px;">Reclamaciones automáticas a proveedores</h2>
+  <div class="rules">
+    <div class="rule"><div class="rn">Regla 1 · Retraso confirmado en el portal</div>Si un pedido consta retrasado en el portal, se envía la primera reclamación por correo y, si el portal lo admite, también como mensaje dentro del portal.</div>
+    <div class="rule"><div class="rn">Regla 2 · Sin respuesta en 3 días</div>Se envía la segunda reclamación y un aviso a la persona de compras que elija Vicmatic, para que tome el caso.</div>
+    <div class="rule"><div class="rn">Regla 3 · Riesgo a 4 días de la entrega</div>Se envía un recordatorio preventivo pidiendo confirmación de fecha antes de que el pedido se retrase.</div>
+  </div>
+  <table>
+    <thead><tr>
+      <th>Pedido</th><th>Proveedor</th><th>Regla que se ha cumplido</th><th>Acción</th><th>Estado</th><th>Próximo paso</th>
+    </tr></thead>
+    <tbody id="claims"></tbody>
+  </table>
+  <div class="hist" id="hist">
+    <div class="hh">Historial de reclamaciones</div>
+    <div>14/11 · Vencía el pedido PV-1047 (Hidráulica Segre) sin confirmación en la extranet.</div>
+    <div>17/11 08:02 · 1ª reclamación de PV-1047 enviada por correo y mensaje en la extranet.</div>
+    <div class="warn">20/11 07:41 · Sin respuesta en 3 días → 2ª reclamación de PV-1047 enviada y aviso a Compras.</div>
+    <div>20/11 07:41 · 1ª reclamación de PV-1043 enviada por correo y mensaje en la extranet.</div>
+    <div>20/11 07:42 · Recordatorio preventivo de PV-1045 enviado por correo.</div>
+    <div class="ok">20/11 08:52 · Respuesta de Neumática Levante a PV-1045: confirman entrega el 24/11.</div>
+  </div>
+</section>
+
+<div class="drawer" id="drawer">
+  <button class="close" onclick="closeDrawer()">✕</button>
+  <h2 id="dTitle"></h2>
+  <div class="sub" id="dSub"></div>
+  <div class="mail" id="dMail"></div>
+  <div class="approve" id="approveRow">
+    <button class="btn" id="approveBtn">Revisar y aprobar envío</button>
+    <button class="btn ghost" onclick="closeDrawer()">Ahora no</button>
+  </div>
+  <div class="status-line" id="dStatus">Pendiente de aprobación. En la demo no se envía nada.</div>
+</div>
+
+<div class="modal-bg" id="modalBg"></div>
+<div class="modal" id="loginModal">
+  <h3>Reconectar · Web Componentes Ebro</h3>
+  <div class="sub">Acceso con la cuenta de Vicmatic en el portal del proveedor.</div>
+  <label>Usuario del portal</label>
+  <input type="text" value="compras@vicmatic.com" readonly>
+  <label>Contraseña</label>
+  <input type="password" value="demo12345" readonly>
+  <div class="actions">
+    <button class="btn" id="doReconnect">Guardar y reconectar</button>
+    <button class="btn ghost" id="cancelReconnect">Cancelar</button>
+  </div>
+  <div class="status-line" style="margin-top:12px;">Demo: no se guarda ni se envía nada. En el sistema real la sesión se renueva con el acceso del cliente.</div>
+</div>
+
+<footer>
+  Demo preparada por Automio para Vicmatic (20/11/2026). Portales, proveedores, pedidos, fechas, reclamaciones y correos son ficticios y solo sirven para ver la idea:
+  el sistema lee el estado de cada pedido tal como aparece en el portal de cada proveedor (con el acceso del cliente), lo junta en un panel y reclama a los proveedores
+  siguiendo las reglas que configure el cliente: la reclamación sale del buzón del cliente y usa el mensaje dentro del portal solo cuando ese portal lo admite.
+  No está conectada a ningún portal real ni da por hecho cómo trabajáis hoy.
+</footer>
+
+<script>
+const P = [
+  {id:"PV-1042", prov:"Neumática Levante S.A.", plat:"Portal Neumática Levante", mat:"Electroválvulas 5/2 · 40 ud", fecha:"25/11/2026", est:"ok", leido:"07:40"},
+  {id:"PV-1043", prov:"Hidráulica Segre S.L.", plat:"Extranet Hidráulica Segre", mat:"Cilindros Ø50 · 12 ud", fecha:"18/11/2026", est:"late", leido:"07:38"},
+  {id:"PV-1044", prov:"Componentes Ebro", plat:"Web Componentes Ebro", mat:"Racores instantáneos · 300 ud", fecha:"27/11/2026", est:"ok", leido:"ayer 18:12"},
+  {id:"PV-1045", prov:"Neumática Levante S.A.", plat:"Portal Neumática Levante", mat:"Filtros FRL · 25 ud", fecha:"24/11/2026", est:"risk", leido:"07:40"},
+  {id:"PV-1046", prov:"Válvulas Monegrillo", plat:"EDI", mat:"Válvulas antirretorno · 60 ud", fecha:"28/11/2026", est:"ok", leido:"07:35"},
+  {id:"PV-1047", prov:"Hidráulica Segre S.L.", plat:"Extranet Hidráulica Segre", mat:"Bombas de engranaje · 4 ud", fecha:"14/11/2026", est:"late", leido:"07:38"},
+  {id:"PV-1048", prov:"Componentes Ebro", plat:"Web Componentes Ebro", mat:"Manguera R2 3/8\" · 200 m", fecha:"01/12/2026", est:"ok", leido:"ayer 18:12"},
+  {id:"PV-1049", prov:"Neumática Levante S.A.", plat:"Portal Neumática Levante", mat:"Presostatos · 30 ud", fecha:"24/11/2026", est:"risk", leido:"07:40"},
+  {id:"PV-1050", prov:"Válvulas Monegrillo", plat:"EDI", mat:"Electroválvulas 3/2 · 45 ud", fecha:"02/12/2026", est:"ok", leido:"07:35"},
+  {id:"PV-1051", prov:"Neumática Levante S.A.", plat:"Portal Neumática Levante", mat:"Sensores magnéticos · 80 ud", fecha:"24/11/2026", est:"risk", leido:"07:40"}
+];
+const B = {ok:["b-ok","En plazo"], risk:["b-risk","Riesgo"], late:["b-late","Retrasado"]};
+const rows = document.getElementById("rows");
+function render(){
+  rows.innerHTML = "";
+  P.forEach(p=>{
+    const tr = document.createElement("tr");
+    tr.className = "row";
+    tr.innerHTML = `<td><b>${p.id}</b></td><td>${p.prov}</td><td class="plat">${p.plat}</td><td>${p.mat}</td><td>${p.fecha}</td><td><span class="badge ${B[p.est][0]}">${B[p.est][1]}</span></td><td class="upd">${p.leido}</td>`;
+    tr.onclick = ()=>openDrawer(p);
+    rows.appendChild(tr);
+  });
+}
+render();
+
+const C = [
+  {id:"PV-1047", prov:"Hidráulica Segre S.L.", regla:"Regla 2 · 2ª reclamación (sin respuesta a la 1ª en 3 días)", via:"Correo + mensaje en la extranet", est:["b-esc","Escalada"], prox:"Aviso enviado a Compras · seguimiento manual",
+   mail:{para:"pedidos@hidraulicasegre.demo", as:"Pedido PV-1047 · 6 días de retraso · 2ª reclamación",
+   txt:"Hola,\n\nEl pedido PV-1047 (Bombas de engranaje · 4 ud) debía entregarse el 14/11/2026. Os lo reclamamos el 17/11 y no hemos recibido respuesta.\n\nNecesitamos hoy la nueva fecha de entrega confirmada en la extranet. Si no es posible, decídnoslo para buscar una alternativa.\n\nGracias,\nCompras · Vicmatic"},
+   st:"Enviada automáticamente hoy 07:41 al cumplirse la regla (demo: no salió nada)."},
+  {id:"PV-1043", prov:"Hidráulica Segre S.L.", regla:"Regla 1 · Retraso confirmado en el portal", via:"Correo + mensaje en la extranet", est:["b-sent","Enviada"], prox:"Si no hay respuesta el 23/11 → 2ª reclamación automática",
+   mail:{para:"pedidos@hidraulicasegre.demo", as:"Pedido PV-1043 · entrega prevista 18/11/2026 · reclamación",
+   txt:"Hola,\n\nEl pedido PV-1043 (Cilindros Ø50 · 12 ud) consta retrasado en la extranet desde el 18/11/2026.\n\n¿Nos confirmáis la nueva fecha de entrega y si el material está ya en preparación?\n\nGracias,\nCompras · Vicmatic"},
+   st:"Enviada automáticamente hoy 07:41 al cumplirse la regla (demo: no salió nada)."},
+  {id:"PV-1045", prov:"Neumática Levante S.A.", regla:"Regla 3 · Riesgo a 4 días de la entrega", via:"Correo", est:["b-resp","Respuesta recibida"], prox:"Confirman entrega el 24/11 · se vigila la fecha",
+   mail:{para:"pedidos@neumaticalevante.demo", as:"Pedido PV-1045 · confirmación de fecha 24/11/2026",
+   txt:"Hola,\n\nEl pedido PV-1045 (Filtros FRL · 25 ud) tiene entrega prevista el 24/11/2026 y en el portal la fecha sigue sin confirmar.\n\n¿Nos confirmáis que llega en fecha?\n\nGracias,\nCompras · Vicmatic"},
+   st:"Respuesta registrada hoy 08:52: «Confirmamos entrega el 24/11» (demo)."},
+  {id:"PV-1049", prov:"Neumática Levante S.A.", regla:"Regla 3 · Riesgo a 4 días de la entrega", via:"Correo", est:["b-prog","Programada"], prox:"Se envía mañana 08:00 si el portal no confirma fecha",
+   mail:{para:"pedidos@neumaticalevante.demo", as:"Pedido PV-1049 · confirmación de fecha 24/11/2026",
+   txt:"Hola,\n\nEl pedido PV-1049 (Presostatos · 30 ud) tiene entrega prevista el 24/11/2026 y en el portal la fecha sigue sin confirmar.\n\n¿Nos confirmáis que llega en fecha?\n\nGracias,\nCompras · Vicmatic"},
+   st:"Programada: se enviaría automáticamente mañana 08:00 si no hay confirmación (demo: no se envía)."}
+];
+const claimsEl = document.getElementById("claims");
+function renderClaims(){
+  claimsEl.innerHTML = "";
+  C.forEach(c=>{
+    const tr = document.createElement("tr");
+    tr.className = "row";
+    tr.innerHTML = `<td><b>${c.id}</b></td><td>${c.prov}</td><td>${c.regla}</td><td class="plat">${c.via}</td><td><span class="badge ${c.est[0]}">${c.est[1]}</span></td><td class="upd">${c.prox}</td>`;
+    tr.onclick = ()=>openClaim(c);
+    claimsEl.appendChild(tr);
+  });
+}
+renderClaims();
+
+function openDrawer(p){
+  document.getElementById("dTitle").textContent = p.id + " · " + p.prov;
+  document.getElementById("dSub").textContent = "Estado leído en " + p.plat + " a las " + p.leido + " (simulado). Seguimiento preparado para revisar.";
+  document.getElementById("dMail").innerHTML =
+    '<div class="mh">Para: pedidos@' + p.prov.toLowerCase().replace(/[^a-z]/g,"") + '.demo</div>' +
+    '<div class="mh">Asunto: Estado del pedido ' + p.id + ' · entrega prevista ' + p.fecha + '</div>' +
+    "Hola,\n\nOs escribimos del pedido " + p.id + " (" + p.mat + "), con entrega prevista el " + p.fecha + ".\n\n" +
+    (p.est==="late" ? "En el portal consta retrasado. ¿Nos confirmáis la nueva fecha de entrega y si el material ya está en preparación?" :
+     p.est==="risk" ? "En el portal la fecha sigue sin confirmar y se acerca la entrega. ¿Nos confirmáis que llega en fecha?" :
+     "En el portal consta en plazo. Solo os pedimos confirmación de que va por buen camino.") +
+    "\n\nGracias,\nCompras · Vicmatic";
+  document.getElementById("approveRow").style.display = "flex";
+  const st = document.getElementById("dStatus");
+  st.textContent = "Pendiente de aprobación. En la demo no se envía nada.";
+  const btn = document.getElementById("approveBtn");
+  btn.textContent = "Revisar y aprobar envío";
+  btn.onclick = ()=>{
+    btn.textContent = "Aprobado ✓";
+    st.textContent = "Aprobado (demo: el correo no sale; en el sistema real saldría desde vuestro buzón).";
+  };
+  document.getElementById("drawer").classList.add("open");
+}
+function openClaim(c){
+  document.getElementById("dTitle").textContent = c.id + " · " + c.prov;
+  document.getElementById("dSub").textContent = "Reclamación automática · " + c.regla + " · vía: " + c.via + ".";
+  document.getElementById("dMail").innerHTML =
+    '<div class="mh">Para: ' + c.mail.para + '</div>' +
+    '<div class="mh">Asunto: ' + c.mail.as + '</div>' + c.mail.txt;
+  document.getElementById("approveRow").style.display = "none";
+  document.getElementById("dStatus").textContent = c.st;
+  document.getElementById("drawer").classList.add("open");
+}
+function closeDrawer(){ document.getElementById("drawer").classList.remove("open"); }
+
+const log = document.getElementById("log");
+document.getElementById("syncBtn").onclick = function(){
+  const p3off = document.getElementById("p3st").textContent.includes("caducada");
+  this.innerHTML = '<span class="spin"></span>Leyendo portales…';
+  this.disabled = true;
+  log.style.display = "block";
+  log.innerHTML = "";
+  const lines = [
+    ["Portal Neumática Levante: sesión válida, leyendo pedidos… 4 pedidos actualizados", "ok", 500],
+    ["Extranet Hidráulica Segre: sesión válida, leyendo pedidos… 2 pedidos actualizados", "ok", 1100],
+    [p3off ? "Web Componentes Ebro: sesión caducada, se mantiene la última lectura de ayer 18:12" : "Web Componentes Ebro: sesión válida, leyendo pedidos… 2 pedidos actualizados", p3off ? "warn" : "ok", 1700],
+    ["EDI Válvulas Monegrillo: 1 mensaje ORDCHG nuevo, 2 pedidos actualizados", "ok", 2300],
+    ["Revisando reglas de reclamación: 1 reclamación enviada, 1 programada", "ok", 2900]
+  ];
+  lines.forEach(([txt, cls, t])=>{
+    setTimeout(()=>{ const d=document.createElement("div"); d.className=cls; d.textContent=txt; log.appendChild(d); }, t);
+  });
+  setTimeout(()=>{
+    this.innerHTML = "Actualizar estados desde los portales";
+    this.disabled = false;
+    document.getElementById("syncNote").textContent = p3off
+      ? "Última lectura: ahora mismo (simulada). Web Componentes Ebro pendiente de reconectar."
+      : "Última lectura completa: ahora mismo (simulada).";
+    if(!p3off){ P.forEach(p=>{ if(p.plat==="Web Componentes Ebro") p.leido="ahora"; }); render(); }
+  }, 3500);
+};
+
+const modalBg = document.getElementById("modalBg");
+const loginModal = document.getElementById("loginModal");
+document.getElementById("reconnectBtn").onclick = ()=>{ modalBg.classList.add("open"); loginModal.classList.add("open"); };
+document.getElementById("cancelReconnect").onclick = closeLogin;
+modalBg.onclick = closeLogin;
+function closeLogin(){ modalBg.classList.remove("open"); loginModal.classList.remove("open"); }
+document.getElementById("doReconnect").onclick = function(){
+  this.innerHTML = '<span class="spin"></span>Conectando…';
+  setTimeout(()=>{
+    closeLogin();
+    this.textContent = "Guardar y reconectar";
+    document.getElementById("p3st").innerHTML = '<span class="dot d-ok"></span> Sesión activa';
+    document.querySelector("#p3 .meta").innerHTML = "Usuario: compras@vicmatic.com<br>Última lectura: ahora mismo (simulada)";
+    document.getElementById("reconnectBtn").style.display = "none";
+    P.forEach(p=>{ if(p.plat==="Web Componentes Ebro") p.leido="ahora"; });
+    render();
+  }, 1400);
+};
+</script>
+</body>
+</html>
